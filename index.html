@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1769aa">
+<meta name="description" content="ISO 286 기준 구멍과 축의 기계 공차 계산기">
+<title>류테크 공차 계산기</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--blue:#1769aa;--blue2:#0e568f;--pale:#eaf3fb;--ink:#1d2939;--muted:#667085;--line:#e3e8ef;--bg:#f2f5f9;--green:#087b53}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans KR",Arial,sans-serif;padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom)}
+header{max-width:620px;margin:0 auto;padding:22px 4px 8px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:42px;height:42px;border-radius:13px;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:23px}
+h1{font-size:22px;margin:0;font-weight:850;letter-spacing:-.6px}
+.sub{font-size:12px;color:var(--muted);margin:5px 0 0}
+main{max-width:620px;margin:0 auto 30px}
+.card{background:#fff;border-radius:17px;padding:17px;margin:13px 0;box-shadow:0 3px 14px #1d29390b;border:1px solid #edf0f4}
+.section-title{font-size:15px;font-weight:800;margin:0 0 12px}
+.segment{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choice-row{display:flex;flex-wrap:wrap;gap:8px}
+.choice{border:1px solid #d5dde7;background:#fff;color:#344054;border-radius:10px;padding:11px 15px;font-size:15px;font-weight:750;min-width:58px}
+.choice.active{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 2px 6px #1769aa35}
+.segment .choice{width:100%;padding:13px 8px}
+.field{display:flex;align-items:center;border:1.5px solid #cbd5e1;border-radius:12px;overflow:hidden;background:#fff}
+.prefix{background:var(--pale);color:var(--blue);font-size:23px;font-weight:850;padding:12px 15px;border-right:1px solid #d8e4f0}
+input{width:100%;min-width:0;border:0;outline:0;padding:13px 14px;font-size:23px;font-weight:700;color:var(--ink)}
+.hint{font-size:12px;color:var(--muted);line-height:1.55;margin:8px 1px 0}
+.calc{width:100%;border:0;background:var(--blue);color:white;border-radius:12px;padding:15px;font-size:17px;font-weight:800;margin-top:15px}
+.calc:active{background:var(--blue2)}
+.result-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.result-tag{font-size:12px;color:var(--green);background:#e8f6ef;padding:6px 9px;border-radius:20px;font-weight:800}
+.symbol{display:flex;align-items:center;gap:8px;font-size:25px;font-weight:900;color:var(--blue);margin:8px 0 3px}
+.tol-stack{display:inline-flex;flex-direction:column;justify-content:center;font-size:13px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
+.ver{font-size:13px;font-weight:700;color:var(--muted);margin-left:6px;vertical-align:middle}
+.range{font-size:22px;font-weight:900;letter-spacing:-.5px;color:var(--green);margin:7px 0 14px;overflow-wrap:anywhere}
+.unit{font-size:12px;color:var(--muted);font-weight:500}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td{padding:11px 3px;border-bottom:1px solid var(--line)}
+td:last-child{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+.note{background:#fff8e8;border:1px solid #f5e4b9;border-radius:12px;padding:12px;font-size:12px;line-height:1.6;color:#75551a}
+footer{max-width:620px;margin:0 auto;padding:4px 4px 24px;color:var(--muted);font-size:11px;line-height:1.6;text-align:center}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand"><div class="logo">⚙</div><div><h1>류테크 공차 계산기<span class="ver">V3.1</span></h1><p class="sub">ISO 286 기준 · 구멍 및 축 공차 계산</p></div></div>
+</header>
+<main>
+ <section class="card">
+  <h2 class="section-title">1. 기본 치수 입력</h2>
+  <div class="field"><span class="prefix">Ø</span><input id="diameter" type="number" inputmode="decimal" step="any" min="0.001" max="500" value="20" aria-label="기본 치수(mm)"></div>
+  <p class="hint">단위: mm · 입력 범위: 0 초과 500mm 이하</p>
+ </section>
+ <section class="card">
+  <h2 class="section-title">2. 가공 부위 선택</h2>
+  <div class="segment" id="partChoices">
+   <button class="choice active" data-part="hole">구멍 · 내경</button>
+   <button class="choice" data-part="shaft">축 · 외경</button>
+  </div>
+ </section>
+ <section class="card">
+  <h2 class="section-title">3. 공차 위치 선택</h2>
+  <div class="choice-row" id="positionChoices">
+   <button class="choice active" data-position="H">H</button>
+   <button class="choice" data-position="G">G</button>
+   <button class="choice" data-position="F">F</button>
+  </div>
+  <p class="hint" id="positionHint">구멍(내경)용 대문자 공차 위치입니다.</p>
+ </section>
+ <section class="card">
+  <h2 class="section-title">4. 공차 등급 선택</h2>
+  <div class="choice-row" id="gradeChoices">
+   <button class="choice" data-grade="5">IT5</button>
+   <button class="choice" data-grade="6">IT6</button>
+   <button class="choice active" data-grade="7">IT7</button>
+   <button class="choice" data-grade="8">IT8</button>
+  </div>
+ </section>
+ <section class="card">
+  <button class="calc" id="calculate">공차 계산하기</button>
+ </section>
+ <section class="card hidden" id="resultCard" aria-live="polite">
+  <div class="result-head"><h2 class="section-title" style="margin:0">계산 결과</h2><span class="result-tag">ISO 286 표 데이터</span></div>
+  <div class="symbol" id="symbol"></div>
+  <div class="range" id="range"></div>
+  <div class="unit">최소 허용 치수 ~ 최대 허용 치수 (mm)</div>
+  <table>
+   <tr><td>기본 치수</td><td id="nominal"></td></tr>
+   <tr><td>상한 편차</td><td id="upper"></td></tr>
+   <tr><td>하한 편차</td><td id="lower"></td></tr>
+   <tr><td>최대 허용 치수</td><td id="max"></td></tr>
+   <tr><td>최소 허용 치수</td><td id="min"></td></tr>
+   <tr><td>공차 폭</td><td id="width"></td></tr>
+  </table>
+ </section>
+ <section class="card">
+  <h2 class="section-title">계산 기준 안내</h2>
+  <div class="note">본 계산기는 ISO 286의 IT5~IT8 공차 폭 및 H/G/F, h/g/f 위치의 기본편차 데이터를 사용합니다. 표에 없는 위치·등급은 계산하지 않습니다. 실제 가공 및 검사 전에는 적용 규격의 최신 원문과 측정 조건을 확인하세요.</div>
+  <p class="hint">치수 구간은 하한값 초과, 상한값 이하로 판정합니다. 예: 18mm 초과~30mm 이하.</p>
+ </section>
+</main>
+<footer>류테크 공차 계산기 · ISO 286 기반 참고용 계산 도구</footer>
+<script>
+const sizeUpper=[3,6,10,18,30,50,80,120,180,250,315,400,500];
+const itTable={
+5:[4,5,6,8,9,11,13,15,18,20,23,25,27],
+6:[6,8,9,11,13,16,19,22,25,29,32,36,40],
+7:[10,12,15,18,21,25,30,35,40,46,52,57,63],
+8:[14,18,22,27,33,39,46,54,63,72,81,89,97]
+};
+// ISO 286 shaft fundamental upper deviations, micrometres
+const shaftUpper={
+ f:[-6,-10,-13,-16,-20,-25,-30,-36,-43,-50,-56,-62,-68],
+ g:[-2,-4,-5,-6,-7,-9,-10,-12,-14,-15,-17,-18,-20]
+};
+let part='hole', position='H', grade=7;
+function bandIndex(d){return sizeUpper.findIndex(v=>d<=v);}
+function selectButtons(container, attr, value){
+ document.querySelectorAll('#'+container+' .choice').forEach(b=>b.classList.toggle('active',b.dataset[attr]===String(value)));
+}
+function setPart(next){
+ part=next;
+ position=next==='hole'?'H':'h';
+ const choices=document.getElementById('positionChoices');
+ choices.innerHTML=(next==='hole'?['H','G','F']:['h','g','f']).map((v,i)=>`<button class="choice ${i===0?'active':''}" data-position="${v}">${v}</button>`).join('');
+ document.getElementById('positionHint').textContent=next==='hole'?'구멍(내경)용 대문자 공차 위치입니다.':'축(외경)용 소문자 공차 위치입니다.';
+ bindPositionButtons();
+ document.querySelectorAll('#partChoices .choice').forEach(b=>b.classList.toggle('active',b.dataset.part===next));
+ document.getElementById('resultCard').classList.add('hidden');
+}
+function bindPositionButtons(){
+ document.querySelectorAll('#positionChoices .choice').forEach(b=>b.addEventListener('click',()=>{
+  position=b.dataset.position;
+  document.querySelectorAll('#positionChoices .choice').forEach(x=>x.classList.toggle('active',x===b));
+  document.getElementById('resultCard').classList.add('hidden');
+ }));
+}
+document.querySelectorAll('#partChoices .choice').forEach(b=>b.addEventListener('click',()=>setPart(b.dataset.part)));
+document.querySelectorAll('#gradeChoices .choice').forEach(b=>b.addEventListener('click',()=>{
+ grade=Number(b.dataset.grade);selectButtons('gradeChoices','grade',grade);document.getElementById('resultCard').classList.add('hidden');
+}));
+bindPositionButtons();
+function fmtMm(v){return v.toFixed(3);}
+function fmtDev(v){return (v>0?'+':'')+(v/1000).toFixed(3)+' mm';}
+function fmtDrawingDev(v){if(v===0)return '0';return (v>0?'+':'')+(v/1000).toFixed(3);}
+function calculate(){
+ const d=Number(document.getElementById('diameter').value);
+ if(!Number.isFinite(d)||d<=0||d>500){alert('기본 치수는 0 초과 500mm 이하로 입력하세요.');return;}
+ const idx=bandIndex(d);
+ if(idx<0){alert('지원하는 치수 범위를 확인하세요.');return;}
+ const tol=itTable[grade][idx];
+ let upper,lower;
+ if(part==='hole'){
+  if(position==='H'){lower=0;upper=tol;}
+  else {const shaftEs=shaftUpper[position.toLowerCase()][idx];lower=-shaftEs;upper=lower+tol;}
+ }else{
+  if(position==='h'){upper=0;lower=-tol;}
+  else {upper=shaftUpper[position][idx];lower=upper-tol;}
+ }
+ const max=d+upper/1000, min=d+lower/1000;
+ document.getElementById('symbol').innerHTML=`<span>Ø${d} ${position}${grade}</span><span class="tol-stack"><span>${fmtDrawingDev(upper)}</span><span>${fmtDrawingDev(lower)}</span></span>`;
+ document.getElementById('range').textContent=`${fmtMm(min)} ~ ${fmtMm(max)} mm`;
+ document.getElementById('nominal').textContent=fmtMm(d)+' mm';
+ document.getElementById('upper').textContent=fmtDev(upper);
+ document.getElementById('lower').textContent=fmtDev(lower);
+ document.getElementById('max').textContent=fmtMm(max)+' mm';
+ document.getElementById('min').textContent=fmtMm(min)+' mm';
+ document.getElementById('width').textContent=tol+' µm ('+(tol/1000).toFixed(3)+' mm)';
+ document.getElementById('resultCard').classList.remove('hidden');
+}
+document.getElementById('calculate').addEventListener('click',calculate);
+document.getElementById('diameter').addEventListener('keydown',e=>{if(e.key==='Enter')calculate();});
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+calculate();
+</script>
+</body>
+</html>
