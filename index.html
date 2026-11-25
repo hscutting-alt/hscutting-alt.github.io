@@ -48,7 +48,7 @@ footer{max-width:620px;margin:0 auto;padding:4px 4px 24px;color:var(--muted);fon
 </head>
 <body>
 <header>
- <div class="brand"><div class="logo">⚙</div><div><h1>류테크 공차 계산기<span class="ver">V3.1</span></h1><p class="sub">ISO 286 기준 · 구멍 및 축 공차 계산</p></div></div>
+ <div class="brand"><div class="logo">⚙</div><div><h1>류테크 공차 계산기<span class="ver">V3.2</span></h1><p class="sub">ISO 286 기준 · 구멍 및 축 공차 계산</p></div></div>
 </header>
 <main>
  <section class="card">
@@ -66,9 +66,9 @@ footer{max-width:620px;margin:0 auto;padding:4px 4px 24px;color:var(--muted);fon
  <section class="card">
   <h2 class="section-title">3. 공차 위치 선택</h2>
   <div class="choice-row" id="positionChoices">
-   <button class="choice active" data-position="H">H</button>
-   <button class="choice" data-position="G">G</button>
    <button class="choice" data-position="F">F</button>
+   <button class="choice" data-position="G">G</button>
+   <button class="choice active" data-position="H">H</button>
   </div>
   <p class="hint" id="positionHint">구멍(내경)용 대문자 공차 위치입니다.</p>
  </section>
@@ -128,7 +128,7 @@ function setPart(next){
  part=next;
  position=next==='hole'?'H':'h';
  const choices=document.getElementById('positionChoices');
- choices.innerHTML=(next==='hole'?['H','G','F']:['h','g','f']).map((v,i)=>`<button class="choice ${i===0?'active':''}" data-position="${v}">${v}</button>`).join('');
+ choices.innerHTML=(next==='hole'?['F','G','H']:['f','g','h']).map(v=>`<button class="choice ${v.toUpperCase()==='H'?'active':''}" data-position="${v}">${v}</button>`).join('');
  document.getElementById('positionHint').textContent=next==='hole'?'구멍(내경)용 대문자 공차 위치입니다.':'축(외경)용 소문자 공차 위치입니다.';
  bindPositionButtons();
  document.querySelectorAll('#partChoices .choice').forEach(b=>b.classList.toggle('active',b.dataset.part===next));
@@ -176,7 +176,11 @@ function calculate(){
 }
 document.getElementById('calculate').addEventListener('click',calculate);
 document.getElementById('diameter').addEventListener('keydown',e=>{if(e.key==='Enter')calculate();});
-if('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+ let refreshing=false;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!refreshing){refreshing=true;location.reload();}});
+ window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{}));
+}
 calculate();
 </script>
 </body>
